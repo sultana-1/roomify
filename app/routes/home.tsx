@@ -1,9 +1,19 @@
 import type { Route } from "./+types/home";
 import Navbar from "../../components/Navbar";
-import { ArrowRight, ArrowUpRight, Clock, Layers, Upload as UploadIcon } from "lucide-react";
+import { ArrowRight, ArrowUpRight, Clock, Layers } from "lucide-react";
 import Button from "../../components/ui/Button";
 import Upload from "../../components/Upload";
-import {useNavigate} from "react-router"; // Make sure to import your custom Upload component here
+import { useNavigate } from "react-router";
+import { useState } from "react";
+
+// Optional: Define DesignItem type if not imported globally
+export interface DesignItem {
+    id: string;
+    name: string;
+    renderedImage: string;
+    sourceImage: string;
+    timestamp: string | number | Date;
+}
 
 export function meta({}: Route.MetaArgs) {
     return [
@@ -14,11 +24,18 @@ export function meta({}: Route.MetaArgs) {
 
 export default function Home() {
     const navigate = useNavigate();
+    const [projects, setProjects] = useState<DesignItem[]>([]);
+
     const handleUploadComplete = async (base64Image: string) => {
         const newId = Date.now().toString();
-        navigate(`/visualizer/${newId}`);
+        navigate(`/visualizer/${newId}`, {
+            state: {
+                initialImage: base64Image,
+                name: `Project ${newId}` // optional: sets a title instead of fallback
+            }
+        });
         return true;
-    }
+    };
     return (
         <div className="home">
             <Navbar />
@@ -27,7 +44,6 @@ export default function Home() {
                     <div className="dot">
                         <div className="pulse"></div>
                     </div>
-
                     <p>Introducing Roomify 2.0</p>
                 </div>
 
@@ -38,13 +54,14 @@ export default function Home() {
                 </p>
 
                 <div className="actions">
-                    <a href="#Upload" className="cta">
+                    <a href="#upload" className="cta">
                         Start Building <ArrowRight className="icon" />
                     </a>
                     <Button variant="outline" size="lg" className="demo">
                         Watch Demo
                     </Button>
                 </div>
+
                 <div id="upload" className="upload-shell">
                     <div className="grid-overlay" />
 
@@ -55,15 +72,14 @@ export default function Home() {
                             </div>
 
                             <h3>Upload your floor plan</h3>
-                            <p>Supports JPG, PNG, formats up to 10MB</p>
+                            <p>Supports JPG, PNG formats up to 10MB</p>
                         </div>
 
-                        <Upload
-                            onComplete={handleUploadComplete} />
-
+                        <Upload onComplete={handleUploadComplete} />
                     </div>
                 </div>
             </section>
+
             <section className="projects">
                 <div className="section-inner">
                     <div className="section-head">
@@ -74,34 +90,34 @@ export default function Home() {
                     </div>
 
                     <div className="projects-grid">
-                        <div className="project-card group">
-                            <div className="preview">
-                                <img
-                                    src="https://roomify-mlhuk267-dfwu1i.puter.site/projects/1770803585402/rendered.png"
-                                    alt="Project"
-                                />
-
-                                <div className="badge">
-                                    <span>Community</span>
-                                </div>
-                            </div>
-
-                            <div className="card-body">
-                                <div>
-                                    <h3>Project Manhattan</h3>
-
-                                    <div className="meta">
-                                        <Clock size={12} />
-                                        <span>{new Date('2027-01-01').toLocaleDateString()}</span>
-                                        <span>By MAHIN</span>
+                        {projects.map(({ id, name, renderedImage, sourceImage, timestamp }) => (
+                            <div
+                                key={id}
+                                className="project-card group"
+                                onClick={() => navigate(`/visualizer/${id}`)}
+                            >
+                                <div className="preview">
+                                    <img  src={renderedImage || sourceImage} alt="Project"/>
+                                    <div className="badge">
+                                        <span>Community</span>
                                     </div>
                                 </div>
-                                <div className="arrow">
-                                    <ArrowUpRight size={18} />
+
+                                <div className="card-body">
+                                    <div>
+                                        <h3>{name}</h3>
+                                        <div className="meta">
+                                            <Clock size={12} />
+                                            <span>{new Date(timestamp).toLocaleDateString()}</span>
+                                            <span>By MAHIN</span>
+                                        </div>
+                                    </div>
+                                    <div className="arrow">
+                                        <ArrowUpRight size={18} />
+                                    </div>
                                 </div>
                             </div>
-                        </div>
-
+                        ))}
                     </div>
                 </div>
             </section>

@@ -4,9 +4,9 @@ import { ArrowRight, ArrowUpRight, Clock, Layers } from "lucide-react";
 import Button from "../../components/ui/Button";
 import Upload from "../../components/Upload";
 import { useNavigate } from "react-router";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { getProjects } from "../../lib/puter.action";
 
-// Optional: Define DesignItem type if not imported globally
 export interface DesignItem {
     id: string;
     name: string;
@@ -26,16 +26,38 @@ export default function Home() {
     const navigate = useNavigate();
     const [projects, setProjects] = useState<DesignItem[]>([]);
 
-    const handleUploadComplete = async (base64Image: string) => {
-        const newId = Date.now().toString();
-        navigate(`/visualizer/${newId}`, {
-            state: {
-                initialImage: base64Image,
-                name: `Project ${newId}` // optional: sets a title instead of fallback
-            }
-        });
-        return true;
+    const isCreatingProjectRef = useRef(false);
+
+    const handleUploadComplete = async (base64Image: string): Promise<boolean> => {
+        try {
+            if (isCreatingProjectRef.current) return false;
+            isCreatingProjectRef.current = true;
+
+            const newId = Date.now().toString();
+            navigate(`/visualizer/${newId}`, {
+                state: {
+                    initialImage: base64Image,
+                    name: `Project ${newId}`
+                }
+            });
+            return true;
+        } catch (error) {
+            console.error("Failed during upload navigation:", error);
+            return false;
+        } finally {
+            isCreatingProjectRef.current = false;
+        }
     };
+
+    useEffect(() => {
+        const fetchProjects = async () => {
+            const items = await getProjects();
+            setProjects(items as unknown as DesignItem[]);
+        };
+
+        fetchProjects();
+    }, []);
+
     return (
         <div className="home">
             <Navbar />
@@ -97,7 +119,7 @@ export default function Home() {
                                 onClick={() => navigate(`/visualizer/${id}`)}
                             >
                                 <div className="preview">
-                                    <img  src={renderedImage || sourceImage} alt="Project"/>
+                                    <img src={renderedImage || sourceImage} alt="Project"/>
                                     <div className="badge">
                                         <span>Community</span>
                                     </div>
